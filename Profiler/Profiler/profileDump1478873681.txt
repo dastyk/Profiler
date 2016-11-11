@@ -1,0 +1,11 @@
+Function: main # Times called: 0, Total time spent: 5.85693 s ( 100% of total ), Time spent excluding children : 8.9819e-05 s ( 0.00153355% of time )
+*Function: FuncA # Times called: 1, Total time spent: 2.93e-07 s ( 5.00262e-06% of total )
+
+*Function: FuncC # Times called: 1, Total time spent: 5.66682 s ( 96.7541% of total ), Time spent excluding children : 5.49438 s ( 96.9571% of time )
+**Function: FuncA # Times called: 1, Total time spent: 0 s ( 0% of total )
+
+**Function: FuncB # Times called: 1000000, Total time spent: 0.172437 s ( 2.94415% of total )
+
+
+*Function: test # Times called: 1, Total time spent: 0.190021 s ( 3.24438% of total )
+
