@@ -1,0 +1,32 @@
+digraph prof { node[shape = "record"];
+graph [ rankdir = "LR"];
+"0000020F8F103370"[
+label = "<f0> main | <f1> Times Called: 1 | <f2> Time Spent(IC): 3.5078e+09ns"];"0000020F8F1109A0"[
+label = "<f0> FuncA | <f1> Times Called: 1 | <f2> Time Spent(IC): 293ns"];
+"0000020F8F103370":f0 -> "0000020F8F1109A0":f0
+"0000020F8F110A40"[
+label = "<f0> FuncC | <f1> Times Called: 1 | <f2> Time Spent(IC): 3.31529e+09ns"];"0000020F8F113400"[
+label = "<f0> FuncA | <f1> Times Called: 1 | <f2> Time Spent(IC): 293ns"];
+"0000020F8F110A40":f0 -> "0000020F8F113400":f0
+"0000020F8F1134A0"[
+label = "<f0> FuncB | <f1> Times Called: 1000000 | <f2> Time Spent(IC): 1.86017e+08ns"];
+"0000020F8F110A40":f0 -> "0000020F8F1134A0":f0
+
+"0000020F8F103370":f0 -> "0000020F8F110A40":f0
+"0000020F8F110BE0"[
+label = "<f0> test | <f1> Times Called: 1 | <f2> Time Spent(IC): 1.92387e+08ns"];
+"0000020F8F103370":f0 -> "0000020F8F110BE0":f0
+
+"0000020F8F113540"[
+label = "<f0> main | <f1> Times Called: 1 | <f2> Time Spent(IC): 1.90061e+09ns"];"0000020F8F113680"[
+label = "<f0> FuncA | <f1> Times Called: 1 | <f2> Time Spent(IC): 0ns"];
+"0000020F8F113540":f0 -> "0000020F8F113680":f0
+"0000020F8F113720"[
+label = "<f0> test | <f1> Times Called: 10 | <f2> Time Spent(IC): 1.90046e+09ns"];
+"0000020F8F113540":f0 -> "0000020F8F113720":f0
+"0000020F8F1135E0"[
+label = "<f0> FuncB | <f1> Times Called: 1 | <f2> Time Spent(IC): 0ns"];
+"0000020F8F113540":f0 -> "0000020F8F1135E0":f0
+
+
+}

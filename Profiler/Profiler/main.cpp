@@ -9,9 +9,11 @@
 #include <crtdbg.h>  
 #endif
 using namespace std;
+uint32_t thread = 0;
 void test();
 void FuncA();
 void FuncC();
+void FuncB();
 int main()
 {
 #if defined( DEBUG ) || defined( _DEBUG )
@@ -21,52 +23,61 @@ int main()
 	//_crtBreakAlloc = 242;
 #endif
 
-	InitProfiler;
-	StartProfile;
+	InitProfilerThreads(2);
+	StartProfileThread(thread);
 	test();
 	FuncA();
 	FuncC();
-	StopProfile;
+	StopProfileThread(thread);
+
+	thread = 1;
+
+	StartProfileThread(thread);
+	FuncB();
+	FuncA();
+	for (int i = 0; i < 10; i++)
+		test();
+	StopProfileThread(thread);
 	ShutdownProfiler;
 }
 
 
 void test()
 {
-	StartProfile;
+	StartProfileThread(thread);
 	int a = 1;
 	for (int i = 0; i < 100000000; i++)
 	{
 		a += a;
 	}
-	ProfileReturnVoid;
+	ProfileReturnVoidThread(thread);
 }
 
 void FuncA()
 {
-	StartProfile;
+	StartProfileThread(thread);
 	int a = 1;
 	while(a < 100000000)
 	{
 		a += a;
 	}
-	ProfileReturnVoid;
+	ProfileReturnVoidThread(thread);
 }
 
 inline void FuncB()
 {
-	StartProfile;
+	StartProfileThread(thread);
 	int a = 1;
 	while (a < 200000000)
 	{
 		a += a;
 	}
-	ProfileReturnVoid;
+	ProfileReturnVoidThread(thread);
 }
 
 void FuncC()
 {
-	StartProfile;
+	StartProfileThread(thread);
 	FuncA();
 	for (int i = 0; i < 1000000; i++)
 	{
@@ -77,5 +88,5 @@ void FuncC()
 			a += a;
 		}*/
 	}
-	ProfileReturnVoid;
+	ProfileReturnVoidThread(thread);
 }

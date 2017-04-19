@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <chrono>
 #include <map>
-
+#include <fstream>
 
 class Profiler
 {
@@ -31,11 +31,14 @@ public:
 			}
 		}
 		Data* parent;
-		const char* functionName;
+		std::string functionName;
 		uint64_t timesCalled;
 		double timeSpent;
 		std::chrono::high_resolution_clock::time_point timeStart;
 		std::map<uint64_t, Data*> children;
+
+
+		const void dump(std::ofstream& out);
 	};
 	struct ThreadData
 	{
@@ -78,6 +81,10 @@ public:
 		currentFunc->timeStart = std::chrono::high_resolution_clock::now();
 	}
 	const void StopProfileF(uint32_t threadid);
+
+
+	const void _dumpToFile();
+
 
 };
 #ifdef __PROFILE
