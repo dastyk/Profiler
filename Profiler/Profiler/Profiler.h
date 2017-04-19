@@ -3,8 +3,84 @@
 
 #pragma once
 
-#ifdef __PROFILE
+#include <map>
+#include <stdint.h>
+#include <chrono>
+#include <map>
 
+
+class Profiler
+{
+public:
+	struct Data
+	{
+		Data() : timesCalled(0), timeSpent(0)
+		{
+
+		}
+		Data(Data* parent, const char* functionName) : parent(parent), functionName(functionName), timesCalled(0), timeSpent(0)
+		{
+
+		}
+		~Data()
+		{
+			for (auto& c : children)
+			{
+				if (c.second)
+					delete c.second;
+			}
+		}
+		Data* parent;
+		const char* functionName;
+		uint64_t timesCalled;
+		double timeSpent;
+		std::chrono::high_resolution_clock::time_point timeStart;
+		std::map<uint64_t, Data*> children;
+	};
+	struct ThreadData
+	{
+		Data* profile = nullptr;
+		Data* current = nullptr;
+	};
+	
+private:
+
+
+	Profiler(uint32_t maxThreads);
+	~Profiler();
+
+	uint32_t _maxThreads;
+	ThreadData* _profiles;
+
+	static Profiler* _instance;
+
+
+public:
+	static void Init(uint32_t maxThreads);
+	static void Shutdown();
+
+	static Profiler& GetInstance();
+	template<uint64_t functionHash>
+	const void StartProfileF(const char * funcName, uint32_t threadid)
+	{
+		auto& currentFunc = _profiles[threadid].current;
+		if (!currentFunc)
+			_profiles[threadid].profile = currentFunc = new Data(nullptr, funcName);
+		else
+		{
+			auto& child = currentFunc->children[functionHash];
+			if (!child)
+				child = new Data(currentFunc, funcName);			
+			currentFunc = child;
+			
+		}	
+		currentFunc->timesCalled++;
+		currentFunc->timeStart = std::chrono::high_resolution_clock::now();
+	}
+	const void StopProfileF(uint32_t threadid);
+
+};
+#ifdef __PROFILE
 static constexpr unsigned int crc_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,    0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -73,77 +149,49 @@ struct MM<size, size, dummy> {
 // This don't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-#define StartProfiler Profiler::Start(__FUNCTION__)
-#define ProfileStart Profiler::GetInstance().StartProfile<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__)
-#define ProfileReturnVoid {Profiler::GetInstance().StopProfile(); return;}
-#define ProfileReturnConst(x) {Profiler::GetInstance().StopProfile(); return x;}
-#define ProfileReturn(x) {auto& e = x; Profiler::GetInstance().StopProfile(); return e;}
-#define ProfilePrint Profiler::GetInstance().Print();
+#define InitProfiler Profiler::Init(1)
+#define InitProfilerThreads(numThreads) Profiler::Init(numThreads)
+
+#define ShutdownProfiler Profiler::Shutdown();
+#define ShutdownProfilerThreads Profiler::Shutdown();
+
+
+#define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__, 0)
+#define StartProfileThread(threadID) Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__, threadID)
+
+#define StopProfile Profiler::GetInstance().StopProfileF(0);
+#define StopProfileThread(threadID) Profiler::GetInstance().StopProfileF(threadID);
+
+#define ProfileReturnVoid {Profiler::GetInstance().StopProfileF(0); return;}
+#define ProfileReturnConst(x) {Profiler::GetInstance().StopProfileF(0); return x;}
+#define ProfileReturn(x) {auto& e = x; Profiler::GetInstance().StopProfileF(0); return e;}
+
+#define ProfileReturnVoidThread(threadID) {Profiler::GetInstance().StopProfileF(threadID); return;}
+#define ProfileReturnConstThread(x, threadID) {Profiler::GetInstance().StopProfileF(threadID); return x;}
+#define ProfileReturnThread(x,threadID) {auto& e = x; Profiler::GetInstance().StopProfileF(threadID); return e;}
 
 #else
-#define StartProfiler
-#define ProfileStart
-#define COMPILE_TIME_CRC32_STR(x) 0
+#define InitProfiler 
+#define InitProfilerThreads(numThreads) 
+
+#define ShutdownProfiler
+#define ShutdownProfilerThreads
+
+
+#define StartProfile 
+#define StartProfileThread(threadID) 
+
+#define StopProfile 
+#define StopProfileThread(threadID) 
+
 #define ProfileReturnVoid {return;}
 #define ProfileReturnConst(x) {return x;}
-#define ProfileReturn(x) {return x;}
+#define ProfileReturn(x) {return e;}
+
+#define ProfileReturnVoidThread(threadID) { return;}
+#define ProfileReturnConstThread(x, threadID) {return x;}
+#define ProfileReturnThread(x,threadID) {return e;}
 #endif
 
-
-#include <map>
-#include <stdint.h>
-#include <chrono>
-
-
-
-class Profiler
-{
-public:
-
-
-	struct Data
-	{
-		Data() : timesCalled(0), timeSpent(0)
-		{
-
-		}
-		Data(Data* parent, const char* name) : parent(parent), name(name), timesCalled(0), timeSpent(0)
-		{
-
-		}
-		Data* parent;
-		const char* name;
-		uint64_t timesCalled;
-		double timeSpent;
-		std::chrono::high_resolution_clock::time_point timeStart;
-		std::map<uint64_t, Data> children;
-	};
-private:
-
-
-	Profiler(const char* str);
-	~Profiler();
-
-	Data _root;
-	Data* _currentFunc;
-
-	static Profiler* _instance;
-public:
-	static void Start(const char* str);
-	static Profiler& GetInstance();
-	template<uint64_t index>
-	const void StartProfile(const char* str)
-	{
-		if (str == _currentFunc->name)
-			int i = 0;
-		_currentFunc->children[index].parent = _currentFunc;
-		_currentFunc = &_currentFunc->children[index];
-		_currentFunc->name = str;
-		_currentFunc->timesCalled++;
-		_currentFunc->timeStart = std::chrono::high_resolution_clock::now();
-	}
-	const void StopProfile();
-	const void Print(double totalTime);
-};
 
 #endif
