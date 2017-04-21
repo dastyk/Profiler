@@ -107,7 +107,7 @@ const void Profiler::Data::dump(std::ofstream & out)
 		out << " | Time Spent(EC): " << temp << "ns";
 
 	}
-			out << "\"];";
+			out << "\"];\n";
 	for (auto& c : children)
 	{
 		c.second->dump(out);
