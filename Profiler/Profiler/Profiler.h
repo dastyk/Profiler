@@ -40,45 +40,36 @@ public:
 
 		const void dump(std::ofstream& out);
 	};
-	struct ThreadData
-	{
-		Data* profile = nullptr;
-		Data* current = nullptr;
-	};
+
 	
+
 private:
 
 
-	Profiler(uint32_t maxThreads);
+	Profiler();
 	~Profiler();
 
-	uint32_t _maxThreads;
-	ThreadData* _profiles;
-
-	static Profiler* _instance;
 
 
+	Data* _profile = nullptr;
+	Data* _current = nullptr;
 public:
-	static void Init(uint32_t maxThreads);
-	static void Shutdown();
-
 	static Profiler& GetInstance();
 	template<uint64_t functionHash>
-	const void StartProfileF(const char * funcName, uint32_t threadid)
+	const void StartProfileF(const char * funcName)
 	{
-		auto& currentFunc = _profiles[threadid].current;
-		if (!currentFunc)
-			_profiles[threadid].profile = currentFunc = new Data(nullptr, funcName);
+		if (!_current)
+			_profile = _current = new Data(nullptr, funcName);
 		else
 		{
-			auto& child = currentFunc->children[functionHash];
+			auto& child = _current->children[functionHash];
 			if (!child)
-				child = new Data(currentFunc, funcName);			
-			currentFunc = child;
+				child = new Data(_current, funcName);
+			_current = child;
 			
 		}	
-		currentFunc->timesCalled++;
-		currentFunc->timeStart = std::chrono::high_resolution_clock::now();
+		_current->timesCalled++;
+		_current->timeStart = std::chrono::high_resolution_clock::now();
 	}
 	const void StopProfileF(uint32_t threadid);
 
@@ -156,48 +147,22 @@ struct MM<size, size, dummy> {
 // This don't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-#define InitProfiler Profiler::Init(1)
-#define InitProfilerThreads(numThreads) Profiler::Init(numThreads)
-
-#define ShutdownProfiler Profiler::Shutdown();
-#define ShutdownProfilerThreads Profiler::Shutdown();
-
-
-#define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__, 0)
-#define StartProfileThread(threadID) Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__, threadID)
+#define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__)
 
 #define StopProfile Profiler::GetInstance().StopProfileF(0);
-#define StopProfileThread(threadID) Profiler::GetInstance().StopProfileF(threadID);
 
 #define ProfileReturnVoid {Profiler::GetInstance().StopProfileF(0); return;}
 #define ProfileReturnConst(x) {Profiler::GetInstance().StopProfileF(0); return x;}
 #define ProfileReturn(x) {auto& e = x; Profiler::GetInstance().StopProfileF(0); return e;}
 
-#define ProfileReturnVoidThread(threadID) {Profiler::GetInstance().StopProfileF(threadID); return;}
-#define ProfileReturnConstThread(x, threadID) {Profiler::GetInstance().StopProfileF(threadID); return x;}
-#define ProfileReturnThread(x,threadID) {auto& e = x; Profiler::GetInstance().StopProfileF(threadID); return e;}
-
 #else
-#define InitProfiler 
-#define InitProfilerThreads(numThreads) 
-
-#define ShutdownProfiler
-#define ShutdownProfilerThreads
-
-
 #define StartProfile 
-#define StartProfileThread(threadID) 
 
 #define StopProfile 
-#define StopProfileThread(threadID) 
 
 #define ProfileReturnVoid {return;}
 #define ProfileReturnConst(x) {return x;}
 #define ProfileReturn(x) {return e;}
-
-#define ProfileReturnVoidThread(threadID) { return;}
-#define ProfileReturnConstThread(x, threadID) {return x;}
-#define ProfileReturnThread(x,threadID) {return e;}
 #endif
 
 

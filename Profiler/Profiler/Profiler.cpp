@@ -5,60 +5,56 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <thread>
 
 using namespace std;
 
-Profiler* Profiler::_instance = nullptr;
-
-Profiler::Profiler(uint32_t maxThreads) : _maxThreads(maxThreads)
+Profiler::Profiler() 
 {
-	
-	_profiles = new ThreadData[maxThreads];
+
 }
 
 
 Profiler::~Profiler()
 {
 	_dumpToFile();
-	for (size_t i = 0; i < _maxThreads; i++)
+
+	if (_profile)
 	{
-		if (_profiles[i].profile)
-		{
-			delete _profiles[i].profile;
-		}
+		delete _profile;
 	}
 
-	delete[] _profiles;
 }
 
 
 
-void Profiler::Init(uint32_t maxThreads)
-{
-	if (!_instance)
-		_instance = new Profiler(maxThreads);
-}
-
-void Profiler::Shutdown()
-{
-	delete _instance;
-	_instance = nullptr;
-}
+//void Profiler::Init(uint32_t maxThreads)
+//{
+//	if (!_instance)
+//		_instance = new Profiler(maxThreads);
+//}
+//
+//void Profiler::Shutdown()
+//{
+//	delete _instance;
+//	_instance = nullptr;
+//}
 
 Profiler & Profiler::GetInstance()
 {
-	return *_instance;
+	static thread_local Profiler inst;
+	return inst;
 }
 
 const void Profiler::StopProfileF(uint32_t threadid)
 {
 	std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
-	auto& currentFunc = _profiles[threadid].current;
 	//std::chrono::duration<double> diff = time - currentFunc->timeStart;
-	auto diff = time - currentFunc->timeStart;
-	currentFunc->timeSpent += std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count();
-	currentFunc = currentFunc->parent;
+	auto diff = time - _current->timeStart;
+	_current->timeSpent += std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count();
+	_current = _current->parent;
 }
+#include <sstream>
 
 const void Profiler::_dumpToFile()
 {
@@ -67,20 +63,25 @@ const void Profiler::_dumpToFile()
 	auto end = std::chrono::system_clock::now();
 	std::time_t end_time = std::chrono::system_clock::to_time_t(end);
 	// std::ctime(&end_time)
-	out.open("temp.dot");
+
+	std::ostringstream ss;
+
+	ss << std::this_thread::get_id();
+
+	std::string idstr = ss.str();
+	out.open("thread" + ss.str() + ".dot", ios::trunc);
 	if (!out.is_open())
 		throw std::runtime_error("Failed to create profile dot file.");
-	
+
 	out << "digraph prof { node[shape = \"record\"];\n";
 	out << "graph [ rankdir = \"LR\"];\n";
-	for (size_t i = 0; i < _maxThreads; i++)
+
+	auto& p = _profile;
+	if (p)
 	{
-		auto& p = _profiles[i].profile;
-		if (p)
-		{
-			p->dump(out);
-		}
+		p->dump(out);
 	}
+
 
 	out << "\n}";
 	out.close();

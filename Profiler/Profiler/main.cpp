@@ -9,75 +9,77 @@
 #include <crtdbg.h>  
 #endif
 using namespace std;
-uint32_t thread = 0;
 void test();
 void FuncA();
 void FuncC();
 void FuncB();
+#include <thread>
+
+
 int main()
 {
-#if defined( DEBUG ) || defined( _DEBUG )
-	_CrtDumpMemoryLeaks();
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
-	//_crtBreakAlloc = 242;
-#endif
+	#if defined( DEBUG ) || defined( _DEBUG )
+		_CrtDumpMemoryLeaks();
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
+		//_crtBreakAlloc = 242;
+	#endif
+	
+		auto t = std::thread(FuncB);
 
-	InitProfilerThreads(2);
-	StartProfileThread(thread);
-	test();
-	FuncA();
-	FuncC();
-	StopProfileThread(thread);
-
-	thread = 1;
-
-	StartProfileThread(thread);
-	FuncB();
-	FuncA();
-	for (int i = 0; i < 10; i++)
+		StartProfile;
 		test();
-	StopProfileThread(thread);
-	ShutdownProfiler;
+		FuncA();
+		FuncC();
+		StopProfile;
+
+		//StartProfile;
+		//FuncB();
+		//FuncA();
+		//for (int i = 0; i < 10; i++)
+		//	test();
+		//StopProfile;
+
+		t.join();
 }
 
 
 void test()
 {
-	StartProfileThread(thread);
+	StartProfile;
 	int a = 1;
 	for (int i = 0; i < 100000000; i++)
 	{
 		a += a;
 	}
-	ProfileReturnVoidThread(thread);
+	ProfileReturnVoid;
 }
 
 void FuncA()
 {
-	StartProfileThread(thread);
+	StartProfile;
 	int a = 1;
 	while(a < 100000000)
 	{
 		a += a;
 	}
-	ProfileReturnVoidThread(thread);
+	ProfileReturnVoid;
 }
 
 inline void FuncB()
 {
-	StartProfileThread(thread);
+	StartProfile;
 	int a = 1;
-	while (a < 200000000)
+	while (a < 10000)
 	{
-		a += a;
+		a += 1;
 	}
-	ProfileReturnVoidThread(thread);
+	ProfileReturnVoid;
 }
 
 void FuncC()
 {
-	StartProfileThread(thread);
+	StartProfile;
 	FuncA();
 	for (int i = 0; i < 1000000; i++)
 	{
@@ -88,5 +90,5 @@ void FuncC()
 			a += a;
 		}*/
 	}
-	ProfileReturnVoidThread(thread);
+	ProfileReturnVoid;
 }
