@@ -97,7 +97,17 @@ const void Profiler::Data::dump(std::ofstream & out)
 	out << "<f0> " << functionName;
 	out << " | <f1> Times Called: " << timesCalled;
 	out << " | <f2> Time Spent(IC): " << timeSpent << "ns";
-	out << "\"];";
+	if (parent)
+		out << ", " << (float)timeSpent / parent->timeSpent << " % of parents.";
+	if (children.size())
+	{
+		auto temp = timeSpent;
+		for (auto& c : children)
+			temp -= c.second->timeSpent;
+		out << " | Time Spent(EC): " << temp << "ns";
+
+	}
+			out << "\"];";
 	for (auto& c : children)
 	{
 		c.second->dump(out);
