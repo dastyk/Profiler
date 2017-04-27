@@ -51,10 +51,11 @@ const void Profiler::StopProfileF(uint32_t threadid)
 	std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
 	//std::chrono::duration<double> diff = time - currentFunc->timeStart;
 	auto diff = time - _current->timeStart;
-	_current->timeSpent += std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count();
+	_current->timeSpent += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
 	_current = _current->parent;
 }
-#include <sstream>
+
+#include <Windows.h>
 
 const void Profiler::_dumpToFile()
 {
@@ -64,33 +65,41 @@ const void Profiler::_dumpToFile()
 	std::time_t end_time = std::chrono::system_clock::to_time_t(end);
 	// std::ctime(&end_time)
 
-	std::ostringstream ss;
+	
+	
+	std::stringstream ss;
+	
 
-	ss << std::this_thread::get_id();
-
-	std::string idstr = ss.str();
-	out.open("thread" + ss.str() + ".dot", ios::trunc);
-	if (!out.is_open())
-		throw std::runtime_error("Failed to create profile dot file.");
-
-	out << "digraph prof { node[shape = \"record\"];\n";
-	out << "graph [ rankdir = \"LR\"];\n";
+	ss << "digraph \"" << this_thread::get_id() << "\" { node[shape = \"record\"];\n";
+	ss << "graph [ rankdir = \"LR\"];\n";
 
 	auto& p = _profile;
 	if (p)
 	{
-		p->dump(out);
+		p->dump(ss);
 	}
 
 
-	out << "\n}";
-	out.close();
 
+
+	ss << "\n}\n\n";
+
+
+	HANDLE f;
+
+	do
+	{
+		f = CreateFile("profile.dot", FILE_APPEND_DATA, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	} while (f == INVALID_HANDLE_VALUE);
+
+	WriteFile(f, ss.str().c_str(), ss.str().size(), NULL, NULL);
+
+	CloseHandle(f);
 
 	return void();
 }
 
-const void Profiler::Data::dump(std::ofstream & out)
+const void Profiler::Data::dump(std::stringstream & out)
 {
 	out << "\"" << this << "\"" << "[\n";
 	out << "label = \"";

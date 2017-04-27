@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <chrono>
 #include <map>
-#include <fstream>
+#include <sstream>
 
 class Profiler
 {
@@ -38,7 +38,7 @@ public:
 		std::map<uint64_t, Data*> children;
 
 
-		const void dump(std::ofstream& out);
+		const void dump(std::stringstream& out);
 	};
 
 	
@@ -58,8 +58,10 @@ public:
 	template<uint64_t functionHash>
 	const void StartProfileF(const char * funcName)
 	{
-		if (!_current)
+		if (!_profile)
 			_profile = _current = new Data(nullptr, funcName);
+		else if (!_current)
+			_current = _profile;
 		else
 		{
 			auto& child = _current->children[functionHash];
@@ -78,6 +80,17 @@ public:
 
 
 };
+#define _P_MS
+
+#ifdef _P_NS
+#define _P_TIMESCALE std::chrono::milliseconds
+#else
+#ifdef _P_MS
+#define _P_TIMESCALE std::chrono::milliseconds
+#else
+#define _P_TIMESCALE std::chrono::milliseconds
+#endif
+
 #ifdef __PROFILE
 static constexpr unsigned int crc_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -162,7 +175,7 @@ struct MM<size, size, dummy> {
 
 #define ProfileReturnVoid {return;}
 #define ProfileReturnConst(x) {return x;}
-#define ProfileReturn(x) {return e;}
+#define ProfileReturn(x) {return x;}
 #endif
 
 
