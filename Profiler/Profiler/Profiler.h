@@ -90,7 +90,7 @@ public:
 #else
 #define _P_TIMESCALE std::chrono::milliseconds
 #endif
-
+#endif
 #ifdef __PROFILE
 static constexpr unsigned int crc_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
