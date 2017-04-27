@@ -9,9 +9,21 @@
 #include <map>
 #include <sstream>
 
+
+#ifdef _P_NS
+#define _P_TIMESCALE std::chrono::nanoseconds
+#else
+#ifdef _P_MS
+#define _P_TIMESCALE std::chrono::milliseconds
+#else
+#define _P_TIMESCALE std::chrono::milliseconds
+#endif
+#endif
+
 class Profiler
 {
 public:
+
 	struct Data
 	{
 		Data() : timesCalled(0), timeSpent(0)
@@ -38,7 +50,33 @@ public:
 		std::map<uint64_t, Data*> children;
 
 
-		const void dump(std::stringstream& out);
+		const void dump(std::stringstream & out)
+		{
+			out << "\"" << this << "\"" << "[\n";
+			out << "label = \"";
+			out << "<f0> " << functionName;
+			out << " | <f1> Times Called: " << timesCalled;
+			out << " | <f2> Time Spent(IC): " << timeSpent;
+			if (parent)
+				out << ", " << (float)timeSpent / parent->timeSpent << " % of parents.";
+			if (children.size())
+			{
+				auto temp = timeSpent;
+				for (auto& c : children)
+					temp -= c.second->timeSpent;
+				out << " | Time Spent(EC): " << temp;
+
+			}
+			out << "\"];\n";
+			for (auto& c : children)
+			{
+				c.second->dump(out);
+				out << "\"" << this << "\":f0 -> \"" << c.second << "\":f0\n";
+			}
+			out << "\n";
+			return void();
+		}
+
 	};
 
 	
@@ -73,24 +111,23 @@ public:
 		_current->timesCalled++;
 		_current->timeStart = std::chrono::high_resolution_clock::now();
 	}
-	const void StopProfileF(uint32_t threadid);
+	const void StopProfileF(uint32_t threadid)
+	{
+		std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
+		//std::chrono::duration<double> diff = time - currentFunc->timeStart;
+		auto diff = time - _current->timeStart;
+		_current->timeSpent += std::chrono::duration_cast<_P_TIMESCALE>(diff).count();
+		_current = _current->parent;
+	}
+
+private:
 
 
 	const void _dumpToFile();
 
 
 };
-#define _P_MS
 
-#ifdef _P_NS
-#define _P_TIMESCALE std::chrono::milliseconds
-#else
-#ifdef _P_MS
-#define _P_TIMESCALE std::chrono::milliseconds
-#else
-#define _P_TIMESCALE std::chrono::milliseconds
-#endif
-#endif
 #ifdef __PROFILE
 static constexpr unsigned int crc_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,

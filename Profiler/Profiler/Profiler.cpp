@@ -46,14 +46,6 @@ Profiler & Profiler::GetInstance()
 	return inst;
 }
 
-const void Profiler::StopProfileF(uint32_t threadid)
-{
-	std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
-	//std::chrono::duration<double> diff = time - currentFunc->timeStart;
-	auto diff = time - _current->timeStart;
-	_current->timeSpent += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
-	_current = _current->parent;
-}
 
 #include <Windows.h>
 
@@ -99,29 +91,3 @@ const void Profiler::_dumpToFile()
 	return void();
 }
 
-const void Profiler::Data::dump(std::stringstream & out)
-{
-	out << "\"" << this << "\"" << "[\n";
-	out << "label = \"";
-	out << "<f0> " << functionName;
-	out << " | <f1> Times Called: " << timesCalled;
-	out << " | <f2> Time Spent(IC): " << timeSpent << "ns";
-	if (parent)
-		out << ", " << (float)timeSpent / parent->timeSpent << " % of parents.";
-	if (children.size())
-	{
-		auto temp = timeSpent;
-		for (auto& c : children)
-			temp -= c.second->timeSpent;
-		out << " | Time Spent(EC): " << temp << "ns";
-
-	}
-			out << "\"];\n";
-	for (auto& c : children)
-	{
-		c.second->dump(out);
-		out << "\"" << this << "\":f0 -> \"" << c.second << "\":f0\n";
-	}
-	out << "\n";
-	return void();
-}
