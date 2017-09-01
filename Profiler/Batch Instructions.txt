@@ -1,0 +1,4 @@
+Download Doxygen and Ghostscript
+
+Add C:\Program Files\gs\gs9.21\lib (or equivalent) to Path Environment variable
+Add C:\Program Files (x86)\Graphviz2.38\bin (or equivalent) to Path Environment variable
