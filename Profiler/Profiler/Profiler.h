@@ -92,7 +92,7 @@ private:
 	{
 
 	}
-	~Profiler()
+	inline ~Profiler()
 	{
 		_dumpToFile();
 
@@ -108,7 +108,7 @@ private:
 	Data* _profile = nullptr;
 	Data* _current = nullptr;
 public:
-	static Profiler& GetInstance()
+	inline static Profiler& GetInstance()
 	{
 		static thread_local Profiler inst;
 		return inst;
