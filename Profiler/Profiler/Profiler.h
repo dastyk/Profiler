@@ -257,7 +257,7 @@ struct MM<size, size, dummy> {
 };
 
 
-// This don't take into account the nul char
+// This doesn't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
 #define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__)
