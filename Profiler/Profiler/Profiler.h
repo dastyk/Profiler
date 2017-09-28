@@ -75,7 +75,7 @@ class Profiler
 			double div = 0.0;
 			if (parent)
 				div = ((double)timeSpent / parent->timeSpent);
-			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\">" << functionName << "</td></tr>\n";
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << functionName << "</font></td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Times Called: " << timesCalled << "</td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << timeSpent << " " << scale;
 			if (parent)
