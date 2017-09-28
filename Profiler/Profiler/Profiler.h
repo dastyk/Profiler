@@ -13,7 +13,7 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
-
+#include <iomanip>
 #ifdef _P_NS
 static const char* scale = "ns";
 #define _P_TIMESCALE std::chrono::nanoseconds
@@ -29,6 +29,7 @@ static const char* scale = "ms";
 
 class Profiler
 {
+	
 	struct Data
 	{
 		Data() : timesCalled(0), timeSpent(0)
@@ -54,29 +55,48 @@ class Profiler
 		std::chrono::high_resolution_clock::time_point timeStart;
 		std::map<uint64_t, Data*> children;
 
+		inline std::string getHexCode(unsigned char c) {
+
+
+			std::stringstream ss;
+
+			ss << std::uppercase << std::setw(2) << std::setfill('0') << std::hex;
+
+
+			ss << +c;
+
+			return ss.str();
+		}
 
 		const void dump(std::stringstream & out)
 		{
-			out << "\"" << this << "\"" << "[\n";
-			out << "label = \"";
-			out << "<f0> " << functionName;
-			out << " | <f1> Times Called: " << timesCalled;
-			out << " | <f2> Time Spent(IC): " << timeSpent << " " << scale;
+			out << "\"" << this << "\"" << "[\n shape = none\n";
+			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
+			double div = 0.0;
 			if (parent)
-				out << ", " << ((double)timeSpent / parent->timeSpent)*100.0 << " % of parents.";
+				div = ((double)timeSpent / parent->timeSpent);
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\">" << functionName << "</td></tr>\n";
+			out << "<tr><td border=\"1\">" << "Times Called: " << timesCalled << "</td></tr>\n";
+			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << timeSpent << " " << scale;
+			if (parent)
+				out << " " << ((double)timeSpent / parent->timeSpent)*100.0 << " % of parents.</td></tr>\n";
+			else
+				out << "</td></tr>\n";
+
 			if (children.size())
 			{
 				auto temp = timeSpent;
 				for (auto& c : children)
 					temp -= c.second->timeSpent;
-				out << " | Time Spent(EC): " << temp << " " << scale;
-
+				out << "<tr><td border=\"1\">" << "Time Spent(EC): " << temp << " " << scale << "</td></tr>\n";
 			}
-			out << "\"];\n";
+
+			out << "</table>>]\n";
+
 			for (auto& c : children)
 			{
 				c.second->dump(out);
-				out << "\"" << this << "\":f0 -> \"" << c.second << "\":f0\n";
+				out << "\"" << this << "\":port1 -> \"" << c.second << "\":port1\n";
 			}
 			out << "\n";
 			return void();
@@ -153,16 +173,15 @@ private:
 
 		std::stringstream ss;
 
-		ss << "digraph \"" << std::this_thread::get_id() << "\" { node[shape = \"record\"];\n";
-		ss << "graph [ rankdir = \"LR\"];\n";
-
+		ss << "digraph \"" << std::this_thread::get_id() << "\"{\n";
+		ss << " rankdir = LR;\n";
 		auto& p = _profile;
 		if (p)
 		{
 			p->dump(ss);
 		}
 
-		ss << "\n}\n\n";
+		ss << "\n}\n";
 
 		static std::mutex mutex;
 		static bool first = true;
