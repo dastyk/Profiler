@@ -1,7 +1,6 @@
 
-#define _P_NS
-#define __PROFILE
 #include "Profiler.h"
+#include "../PDLLTest/IBackend.h"
 #include <iostream>
 #if defined( DEBUG ) || defined( _DEBUG )
 #define _CRTDBG_MAP_ALLOC  
@@ -15,7 +14,7 @@ void FuncC();
 void FuncB();
 #include <thread>
 
-
+#pragma comment(lib, "PDLLTest.lib")
 int main()
 {
 	#if defined( DEBUG ) || defined( _DEBUG )
@@ -28,6 +27,12 @@ int main()
 		auto t = std::thread(FuncB);
 
 		StartProfile;
+		auto b = CreateBackend();
+		auto ret = b->DoSomething(123);
+		b->DoSomethingMore();
+		delete b;
+
+
 		test();
 		FuncA();
 		FuncC();
@@ -70,7 +75,7 @@ inline void FuncB()
 {
 	StartProfile;
 	uint64_t a = 1;
-	while (a < UINT64_MAX-1)
+	while (a < UINT16_MAX-1)
 	{
 		a += 1;
 	}
@@ -81,7 +86,7 @@ void FuncC()
 {
 	StartProfile;
 	FuncA();
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		FuncB();
 		/*int a = 1;

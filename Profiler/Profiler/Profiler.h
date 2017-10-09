@@ -14,6 +14,7 @@
 #include <thread>
 #include <mutex>
 #include <iomanip>
+
 #ifdef _P_NS
 static const char* scale = "ns";
 #define _P_TIMESCALE std::chrono::nanoseconds
@@ -27,6 +28,7 @@ static const char* scale = "ms";
 #endif
 #endif
 
+#ifdef __PROFILE
 class Profiler
 {
 	
@@ -67,7 +69,23 @@ class Profiler
 
 			return ss.str();
 		}
+		const void dumpRoot(std::stringstream & out)
+		{
+			out << "\"" << this << "\"" << "[\n shape = none\n";
+			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
 
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(0) << getHexCode(150) << getHexCode(50) << "\"><font color=\"white\">" << functionName << "</font></td></tr>\n";
+			out << "</table>>]\n";
+
+			for (auto& c : children)
+			{
+				c.second->parent = nullptr;
+				c.second->dump(out);
+				out << "\"" << this << "\":port1 -> \"" << c.second << "\":port1\n";
+			}
+			out << "\n";
+			return void();
+		}
 		const void dump(std::stringstream & out)
 		{
 			out << "\"" << this << "\"" << "[\n shape = none\n";
@@ -137,10 +155,20 @@ public:
 	const void StartProfileF(const char * funcName)
 	{
 		if (!_profile)
-			_profile = _current = new Data(nullptr, funcName);
-		else if (!_current)
-			_current = _profile;
-		else
+		{
+			std::string name = funcName;
+			size_t lastindex = name.find_last_of(":");
+			if (lastindex == std::string::npos)
+				_profile = _current = new Data(nullptr, "root");
+			else
+			{
+				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).c_str());
+			}
+				
+
+			
+		}
+			
 		{
 			auto& child = _current->children[functionHash];
 			if (!child)
@@ -153,7 +181,6 @@ public:
 	inline const void StopProfileF(uint32_t threadid)
 	{
 		std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
-		//std::chrono::duration<double> diff = time - currentFunc->timeStart;
 		auto diff = time - _current->timeStart;
 		_current->timeSpent += std::chrono::duration_cast<_P_TIMESCALE>(diff).count();
 		_current = _current->parent;
@@ -164,53 +191,35 @@ private:
 
 	const void _dumpToFile()
 	{
-		using namespace std::chrono_literals;
-		//auto end = std::chrono::system_clock::now();
-		//std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-		// std::ctime(&end_time)
-
-
-
 		std::stringstream ss;
 
 		ss << "digraph \"" << std::this_thread::get_id() << "\"{\n";
 		ss << " rankdir = LR;\n";
-		auto& p = _profile;
-		if (p)
+
+		if (_profile)
 		{
-			p->dump(ss);
+			_profile->dumpRoot(ss);
 		}
 
 		ss << "\n}\n";
 
-		static std::mutex mutex;
-		static bool first = true;
 		std::ofstream out;
-		mutex.lock();
-	
-		if(first)
-		{
-			out.open("profile.dot", std::ios::out);
-			first = false;
-		}
-			
-		else
-			out.open("profile.dot", std::ios::out | std::ios::app);
-		
+
+		std::stringstream fn;
+		fn << "profile_" << std::this_thread::get_id() << _profile->functionName << ".dot";
+		out.open(fn.str(), std::ios::out);
+
 
 		out.write(ss.str().c_str(), ss.str().size());
 
 		out.close();
 
-
-		mutex.unlock();
 		return void();
 	}
 
 
 };
 
-#ifdef __PROFILE
 static constexpr unsigned int crc_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,    0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
