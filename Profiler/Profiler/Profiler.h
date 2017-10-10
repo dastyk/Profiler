@@ -107,6 +107,9 @@ class Profiler
 			else
 				out << "</td></tr>\n";
 
+			out << "<tr><td border=\"1\">" << "Time Spent(avg): " << std::chrono::duration_cast<_P_TIMESCALE>(timeSpent/timesCalled).count() << " " << scale << "</td></tr>\n";
+
+
 			if (children.size())
 			{
 				auto temp = timeSpent;
