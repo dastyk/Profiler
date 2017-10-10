@@ -1,6 +1,11 @@
 #include "IBackend.h"
 #include "Backend.h"
-DLLE IBackend * CreateBackend()
+namespace TT
 {
-	return new Backend;
+
+
+	DLLE IBackend * CreateBackend()
+	{
+		return new Backend;
+	}
 }

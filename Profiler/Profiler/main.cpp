@@ -17,6 +17,8 @@ void FuncB();
 #pragma comment(lib, "PDLLTest.lib")
 int main()
 {
+
+	
 	#if defined( DEBUG ) || defined( _DEBUG )
 		_CrtDumpMemoryLeaks();
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -27,7 +29,7 @@ int main()
 		auto t = std::thread(FuncB);
 
 		StartProfile;
-		auto b = CreateBackend();
+		auto b = TT::CreateBackend();
 		auto ret = b->DoSomething(123);
 		b->DoSomethingMore();
 		delete b;
@@ -46,6 +48,7 @@ int main()
 		//StopProfile;
 
 		t.join();
+	
 }
 
 
@@ -57,7 +60,7 @@ void test()
 	{
 		a += a;
 	}
-	ProfileReturnVoid;
+	StopProfile;
 }
 
 void FuncA()

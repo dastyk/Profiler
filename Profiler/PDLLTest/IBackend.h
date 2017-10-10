@@ -6,17 +6,22 @@
 #define DLLE __declspec(dllimport)
 #endif
 
-class IBackend
+namespace TT
 {
-public:
-	virtual	~IBackend() {};
 
-	virtual int DoSomething(int asd) = 0;
 
-	virtual void DoSomethingMore() = 0;
-protected:
-	IBackend() {};
+	class IBackend
+	{
+	public:
+		virtual	~IBackend() {};
 
-};
+		virtual int DoSomething(int asd) = 0;
 
-DLLE IBackend* CreateBackend();
+		virtual void DoSomethingMore() = 0;
+	protected:
+		IBackend() {};
+
+	};
+
+	DLLE IBackend* CreateBackend();
+}

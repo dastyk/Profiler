@@ -38,7 +38,7 @@ class Profiler
 		{
 
 		}
-		Data(Data* parent, const char* functionName) : parent(parent), functionName(functionName), timesCalled(0), timeSpent(0)
+		Data(Data* parent, const char* functionName, uint64_t myHash) : parent(parent), functionName(functionName), myHash(myHash), timesCalled(0), timeSpent(0)
 		{
 
 		}
@@ -52,8 +52,9 @@ class Profiler
 		}
 		Data* parent;
 		std::string functionName;
+		uint64_t myHash;
 		uint64_t timesCalled;
-		double timeSpent;
+		std::chrono::nanoseconds timeSpent;
 		std::chrono::high_resolution_clock::time_point timeStart;
 		std::map<uint64_t, Data*> children;
 
@@ -92,12 +93,12 @@ class Profiler
 			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
 			double div = 0.0;
 			if (parent)
-				div = ((double)timeSpent / parent->timeSpent);
+				div = ((double)timeSpent.count() / parent->timeSpent.count());
 			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << functionName << "</font></td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Times Called: " << timesCalled << "</td></tr>\n";
-			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << timeSpent << " " << scale;
+			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << std::chrono::duration_cast<_P_TIMESCALE>(timeSpent).count() << " " << scale;
 			if (parent)
-				out << " " << ((double)timeSpent / parent->timeSpent)*100.0 << " % of parents.</td></tr>\n";
+				out << " " << div*100.0 << " % of parents.</td></tr>\n";
 			else
 				out << "</td></tr>\n";
 
@@ -106,7 +107,7 @@ class Profiler
 				auto temp = timeSpent;
 				for (auto& c : children)
 					temp -= c.second->timeSpent;
-				out << "<tr><td border=\"1\">" << "Time Spent(EC): " << temp << " " << scale << "</td></tr>\n";
+				out << "<tr><td border=\"1\">" << "Time Spent(EC): " << std::chrono::duration_cast<_P_TIMESCALE>(temp).count() << " " << scale << "</td></tr>\n";
 			}
 
 			out << "</table>>]\n";
@@ -159,10 +160,11 @@ public:
 			std::string name = funcName;
 			size_t lastindex = name.find_last_of(":");
 			if (lastindex == std::string::npos)
-				_profile = _current = new Data(nullptr, "root");
+				_profile = _current = new Data(nullptr, "root", functionHash);
 			else
 			{
-				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).c_str());
+				size_t lastindex2 = name.substr(0, lastindex - 1).find_last_of(":");
+				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).substr(lastindex2 +1).c_str(), functionHash);
 			}
 				
 
@@ -172,17 +174,24 @@ public:
 		{
 			auto& child = _current->children[functionHash];
 			if (!child)
-				child = new Data(_current, funcName);
+				child = new Data(_current, funcName, functionHash);
 			_current = child;	
 		}	
 		_current->timesCalled++;
 		_current->timeStart = std::chrono::high_resolution_clock::now();
 	}
-	inline const void StopProfileF(uint32_t threadid)
+
+	template<uint64_t functionHash>
+	inline const void StopProfileF(const char * funcName)
 	{
 		std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
-		auto diff = time - _current->timeStart;
-		_current->timeSpent += std::chrono::duration_cast<_P_TIMESCALE>(diff).count();
+		std::chrono::nanoseconds diff = time - _current->timeStart;
+		if (_current->myHash != functionHash)
+		{
+			std::string asd = "Function mismatch. " + _current->functionName + " != " + funcName;
+			throw std::exception(asd.c_str());
+		}
+		_current->timeSpent += diff;
 		_current = _current->parent;
 	}
 
@@ -207,9 +216,9 @@ private:
 
 		std::stringstream fn;
 		fn << "profile_" << std::this_thread::get_id() << _profile->functionName << ".dot";
-		out.open(fn.str(), std::ios::out);
-
-
+		out.open(fn.str(), std::ios::out | std::ios::trunc);
+		if (!out.is_open())
+			throw std::exception("Profile file could not be opened");
 		out.write(ss.str().c_str(), ss.str().size());
 
 		out.close();
@@ -290,12 +299,12 @@ struct MM<size, size, dummy> {
 
 #define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__)
 
-#define StopProfile Profiler::GetInstance().StopProfileF(0);
+#define StopProfile Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__);
 
-#define ProfileReturnVoid {Profiler::GetInstance().StopProfileF(0); return;}
-#define ProfileReturnConst(x) {Profiler::GetInstance().StopProfileF(0); return x;}
-#define ProfileReturnRef(x) {auto& e = x; Profiler::GetInstance().StopProfileF(0); return e;}
-#define ProfileReturn(x) {auto e = x; Profiler::GetInstance().StopProfileF(0); return e;}
+#define ProfileReturnVoid {Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return;}
+#define ProfileReturnConst(x) {Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return x;}
+#define ProfileReturnRef(x) {auto& e = x; Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return e;}
+#define ProfileReturn(x) {auto e = x; Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return e;}
 
 #else
 #define StartProfile 
