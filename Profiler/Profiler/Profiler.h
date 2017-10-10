@@ -76,11 +76,16 @@ class Profiler
 			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
 
 			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(0) << getHexCode(150) << getHexCode(50) << "\"><font color=\"white\">" << functionName << "</font></td></tr>\n";
-			out << "</table>>]\n";
-
+		
 			for (auto& c : children)
 			{
-				c.second->parent = nullptr;
+				timeSpent += c.second->timeSpent;
+			}
+			out << "<tr><td border=\"1\">" << "Time Spent: " << std::chrono::duration_cast<_P_TIMESCALE>(timeSpent).count() << " " << scale << "</td></tr>\n";
+
+			out << "</table>>]\n";
+			for (auto& c : children)
+			{
 				c.second->dump(out);
 				out << "\"" << this << "\":port1 -> \"" << c.second << "\":port1\n";
 			}
