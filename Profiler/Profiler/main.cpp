@@ -15,6 +15,7 @@ void FuncB();
 #include <thread>
 
 #pragma comment(lib, "PDLLTest.lib")
+
 int main()
 {
 
@@ -33,7 +34,6 @@ int main()
 		auto ret = b->DoSomething(123);
 		b->DoSomethingMore();
 		delete b;
-
 
 		test();
 		FuncA();

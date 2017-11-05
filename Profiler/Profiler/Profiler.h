@@ -14,6 +14,7 @@
 #include <thread>
 #include <mutex>
 #include <iomanip>
+#include <filesystem>
 
 #ifdef _P_NS
 static const char* scale = "ns";
@@ -220,10 +221,79 @@ private:
 
 		ss << "\n}\n";
 
-		std::ofstream out;
+		
 
+		std::experimental::filesystem::create_directory("Profiler");
+		std::experimental::filesystem::create_directory("Profiler\\" + _profile->functionName);
+		std::ofstream bfile;
+		bfile.open("Profiler\\ConvertDotsToPdf.bat", std::ios::trunc);
+		if (bfile.is_open())
+			bfile << R"(@if (@X)==(@Y) @end /* JScript comment
+    @echo off
+
+    set "extension=dot"
+
+    setlocal enableDelayedExpansion
+    for /R %%a in (*%extension%) do (
+        for /f %%# in ('cscript //E:JScript //nologo "%~f0" %%a') do set "cdate=%%#"
+       echo "%%~a"
+	   echo "%%~dpa%%~na_!cdate!.pdf"
+	   dot -Tpdf "%%~a" -o "%%~dpa%%~na_!cdate!.pdf"
+	   del "%%~a"
+    )
+
+    rem cscript //E:JScript //nologo "%~f0" %*
+    exit /b %errorlevel%
+@if (@X)==(@Y) @end JScript comment */
+
+
+FSOObj = new ActiveXObject("Scripting.FileSystemObject");
+var ARGS = WScript.Arguments;
+var file=ARGS.Item(0);
+
+var d1=FSOObj.GetFile(file).DateCreated;
+
+d2=new Date(d1);
+var year=d2.getFullYear();
+var mon=d2.getMonth();
+var day=d2.getDate();
+var h=d2.getHours();
+var m=d2.getMinutes();
+var s=d2.getSeconds();
+var ms=d2.getMilliseconds();
+
+if (mon<10){mon="0"+mon;}
+if (day<10){day="0"+day;}
+if (h<10){h="0"+h;}
+if (m<10){m="0"+m;}
+if (s<10){s="0"+s;}
+if (ms<10){ms="00"+ms;}else if(ms<100){ms="0"+ms;}
+
+WScript.Echo(""+year+mon+day+h+m+s+ms);)";
+
+
+		bfile.close();
+
+
+		std::ofstream rf;
+		rf.open("Profiler\\BatchInstructions.txt", std::ios::trunc);
+		if (rf.is_open())
+			rf << R"(Download Graphviz, Ghostscript and GnuWin32
+
+http://www.graphviz.org/pub/graphviz/stable/windows/graphviz-2.38.msi
+https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs921/gs921w64.exe
+https://sourceforge.net/projects/getgnuwin32/files/getgnuwin32/0.6.30/GetGnuWin32-0.6.3.exe/download
+
+Add C:\Program Files (x86)\Graphviz2.38\bin (or equivalent) to Path Environment variable
+Add C:\Program Files\gs\gs9.21\lib (or equivalent) to Path Environment variable
+C:\Program Files (x86)\GnuWin32\bin (or equivalent) to Path Environment variable
+)";
+
+
+		rf.close();
+		std::ofstream out;
 		std::stringstream fn;
-		fn << "profile_" << std::this_thread::get_id() << _profile->functionName << ".dot";
+		fn <<  "Profiler\\" << _profile->functionName << "\\profile_" << std::this_thread::get_id() << ".dot";
 		out.open(fn.str(), std::ios::out | std::ios::trunc);
 		if (!out.is_open())
 			throw std::exception("Profile file could not be opened");
