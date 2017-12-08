@@ -103,12 +103,19 @@ class Profiler
 		}
 		const void dump(std::stringstream & out)
 		{
+			static const auto ripLG = [](const std::string& str)
+			{
+				std::string temp = str;
+				std::replace(temp.begin(), temp.end(), '<', '_');
+				std::replace(temp.begin(), temp.end(), '>', '_');
+				return temp;
+			};
 			out << "\"" << this << "\"" << "[\n shape = none\n";
 			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
 			double div = 0.0;
 			if (parent)
 				div = ((double)timeSpent.count() / parent->timeSpent.count());
-			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << functionName << "</font></td></tr>\n";
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << ripLG(functionName) << "</font></td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Times Called: " << timesCalled << "</td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << std::chrono::duration_cast<_P_TIMESCALE>(timeSpent).count() << " " << scale;
 			if (parent)
