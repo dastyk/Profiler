@@ -205,16 +205,10 @@ public:
 		_current->timeStart = std::chrono::high_resolution_clock::now();
 	}
 
-	template<uint64_t functionHash>
-	inline const void StopProfileF(const char * funcName)
+	inline void StopProfileF()
 	{
 		std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
 		std::chrono::nanoseconds diff = time - _current->timeStart;
-		if (_current->myHash != functionHash)
-		{
-			std::string asd = "Function mismatch. " + _current->functionName + " != " + funcName;
-			throw std::exception(asd.c_str());
-		}
 		_current->timeSpent += diff;
 		_current = _current->parent;
 	}
@@ -389,27 +383,27 @@ struct MM<size, size, dummy> {
 	}
 };
 
+struct Prolifer
+{
+	Profiler&p;
+	Prolifer(Profiler& p) : p(p)
+	{
 
+	}
+	~Prolifer()
+	{
+		p.StopProfileF();
+	}
+};
 // This doesn't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-#define StartProfile Profiler::GetInstance().StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__)
-
-#define StopProfile Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__);
-
-#define ProfileReturnVoid {Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return;}
-#define ProfileReturnConst(x) {Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return x;}
-#define ProfileReturnRef(x) {auto& e = x; Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return e;}
-#define ProfileReturn(x) {auto e = x; Profiler::GetInstance().StopProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__); return e;}
+#define StartProfile {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__);}
+#define StartProfileC(x) {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(x)>(x);}
 
 #else
 #define StartProfile 
-
-#define StopProfile 
-
-#define ProfileReturnVoid {return;}
-#define ProfileReturnConst(x) {return x;}
-#define ProfileReturn(x) {return x;}
+#define StartProfileC(x)
 #endif
 
 

@@ -28,18 +28,17 @@ int main()
 	#endif
 	
 		auto t = std::thread(FuncB);
+		{
+			StartProfile;
+			auto b = TT::CreateBackend();
+			auto ret = b->DoSomething(123);
+			b->DoSomethingMore();
+			delete b;
 
-		StartProfile;
-		auto b = TT::CreateBackend();
-		auto ret = b->DoSomething(123);
-		b->DoSomethingMore();
-		delete b;
-
-		test();
-		FuncA();
-		FuncC();
-		StopProfile;
-
+			test();
+			FuncA();
+			FuncC();
+		}
 		//StartProfile;
 		//FuncB();
 		//FuncA();
@@ -60,7 +59,7 @@ void test()
 	{
 		a += a;
 	}
-	StopProfile;
+
 }
 
 void FuncA()
@@ -71,7 +70,7 @@ void FuncA()
 	{
 		a += a;
 	}
-	ProfileReturnVoid;
+
 }
 
 inline void FuncB()
@@ -82,7 +81,7 @@ inline void FuncB()
 	{
 		a += 1;
 	}
-	ProfileReturnVoid;
+
 }
 
 void FuncC()
@@ -98,5 +97,5 @@ void FuncC()
 			a += a;
 		}*/
 	}
-	ProfileReturnVoid;
+
 }
