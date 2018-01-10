@@ -189,11 +189,11 @@ public:
 			std::string name = funcName;
 			size_t lastindex = name.find_last_of(":");
 			if (lastindex == std::string::npos)
-				_profile = _current = new Data(nullptr, "root", functionHash, file);
+				_profile = _current = new Data(nullptr, "root", functionHash, "");
 			else
 			{
 				size_t lastindex2 = name.substr(0, lastindex - 1).find_last_of(":");
-				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).substr(lastindex2 +1).c_str(), functionHash, file);
+				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).substr(lastindex2 +1).c_str(), functionHash, "");
 			}
 				
 
