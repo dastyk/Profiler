@@ -27,18 +27,18 @@ int main()
 		//_crtBreakAlloc = 242;
 	#endif
 	
-		auto t = std::thread(FuncB);
-		{
-			StartProfile;
-			auto b = TT::CreateBackend();
-			auto ret = b->DoSomething(123);
-			b->DoSomethingMore();
-			delete b;
+		//auto t = std::thread(FuncB);
+		//{
+		//	StartProfile;
+		//	auto b = TT::CreateBackend();
+		//	auto ret = b->DoSomething(123);
+		//	b->DoSomethingMore();
+		//	delete b;
 
-			test();
-			FuncA();
-			FuncC();
-		}
+		//	test();
+		//	FuncA();
+		//	FuncC();
+		//}
 		//StartProfile;
 		//FuncB();
 		//FuncA();
@@ -46,7 +46,19 @@ int main()
 		//	test();
 		//StopProfile;
 
-		t.join();
+		//t.join();
+
+
+		StartProfile;
+		{
+			StartProfileC("Test");
+			{
+				StartProfileC("Test_1");
+			}
+			{
+				StartProfileC("Test_2");
+			}
+		}
 	
 }
 

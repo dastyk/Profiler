@@ -29,6 +29,7 @@ static const char* scale = "ms";
 #endif
 #endif
 
+
 #ifdef __PROFILE
 
 class Profiler
@@ -377,11 +378,18 @@ struct MM {
 		return MM<size, idx + 1>::crc32(str, (prev_crc >> 8) ^ crc_table[(prev_crc ^ str[idx]) & 0xFF]);
 	}
 };
-#ifndef _PROFILER_UTI_
-#define _PROFILER_UTI_
+
+// This is the stop-recursion function
+template<int size, class dummy>
+struct MM<size, size, dummy> {
+	static constexpr unsigned int crc32(const char * str, unsigned int prev_crc = 0xFFFFFFFF)
+	{
+		return prev_crc ^ 0xFFFFFFFF;
+	}
+};
 namespace UTI
 {
-	const char* basename(const char* file)
+	static const char* basename(const char* file)
 	{
 		const char* f2 = nullptr;
 		const char* f = nullptr;
@@ -403,7 +411,7 @@ namespace UTI
 		else
 			return file;
 	}
-	const char* basenameF(const char* file)
+	static const char* basenameF(const char* file)
 	{
 		const char* f2 = nullptr;
 		const char* f = nullptr;
@@ -415,7 +423,7 @@ namespace UTI
 				++c;
 				f2 = f;
 				f = c;
-				
+
 			}
 
 			++c;
@@ -428,16 +436,6 @@ namespace UTI
 			return file;
 	}
 }
-#endif
-// This is the stop-recursion function
-template<int size, class dummy>
-struct MM<size, size, dummy> {
-	static constexpr unsigned int crc32(const char * str, unsigned int prev_crc = 0xFFFFFFFF)
-	{
-		return prev_crc ^ 0xFFFFFFFF;
-	}
-};
-
 struct Prolifer
 {
 	Profiler&p;
