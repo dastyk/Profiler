@@ -30,6 +30,7 @@ static const char* scale = "ms";
 #endif
 
 #ifdef __PROFILE
+
 class Profiler
 {
 	
@@ -39,7 +40,9 @@ class Profiler
 		{
 
 		}
-		Data(Data* parent, const char* functionName, uint64_t myHash) : parent(parent), functionName(functionName), myHash(myHash), timesCalled(0), timeSpent(0)
+		Data(Data* parent, const char* functionName, uint64_t myHash, const char* file) 
+			: parent(parent), functionName(functionName), myHash(myHash), timesCalled(0), timeSpent(0),
+			file(file)
 		{
 
 		}
@@ -53,6 +56,7 @@ class Profiler
 		}
 		Data* parent;
 		std::string functionName;
+		const char* file;
 		uint64_t myHash;
 		uint64_t timesCalled;
 		std::chrono::nanoseconds timeSpent;
@@ -84,7 +88,7 @@ class Profiler
 			out << "\"" << this << "\"" << "[\n shape = none\n";
 			out << "label = <<table border=\"0\" cellspacing = \"0\">\n";
 
-			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(0) << getHexCode(150) << getHexCode(50) << "\"><font color=\"white\">" << ripLG(functionName) << "</font></td></tr>\n";
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(0) << getHexCode(150) << getHexCode(50) << "\"><font color=\"white\">" << file << ": " << ripLG(functionName) << "</font></td></tr>\n";
 		
 			for (auto& c : children)
 			{
@@ -115,7 +119,7 @@ class Profiler
 			double div = 0.0;
 			if (parent)
 				div = ((double)timeSpent.count() / parent->timeSpent.count());
-			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << ripLG(functionName) << "</font></td></tr>\n";
+			out << "<tr><td port=\"port1\" border=\"1\" bgcolor = \"#" << getHexCode(unsigned char(150*div)) << getHexCode(50) << getHexCode(unsigned char(50 * (1.0-div))) << "\"><font color=\"white\">" << file << ": " << ripLG(functionName) << "</font></td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Times Called: " << timesCalled << "</td></tr>\n";
 			out << "<tr><td border=\"1\">" << "Time Spent(IC): " << std::chrono::duration_cast<_P_TIMESCALE>(timeSpent).count() << " " << scale;
 			if (parent)
@@ -177,18 +181,18 @@ public:
 		return inst;
 	}
 	template<uint64_t functionHash>
-	const void StartProfileF(const char * funcName)
+	const void StartProfileF(const char * funcName, const char* file)
 	{
 		if (!_profile)
 		{
 			std::string name = funcName;
 			size_t lastindex = name.find_last_of(":");
 			if (lastindex == std::string::npos)
-				_profile = _current = new Data(nullptr, "root", functionHash);
+				_profile = _current = new Data(nullptr, "root", functionHash, file);
 			else
 			{
 				size_t lastindex2 = name.substr(0, lastindex - 1).find_last_of(":");
-				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).substr(lastindex2 +1).c_str(), functionHash);
+				_profile = _current = new Data(nullptr, name.substr(0, lastindex- 1).substr(lastindex2 +1).c_str(), functionHash, file);
 			}
 				
 
@@ -198,7 +202,7 @@ public:
 		{
 			auto& child = _current->children[functionHash];
 			if (!child)
-				child = new Data(_current, funcName, functionHash);
+				child = new Data(_current, funcName, functionHash, file);
 			_current = child;	
 		}	
 		_current->timesCalled++;
@@ -374,6 +378,55 @@ struct MM {
 	}
 };
 
+namespace UTI
+{
+	const char* basename(const char* file)
+	{
+		const char* f2 = nullptr;
+		const char* f = nullptr;
+		const char* c = file;
+		while (*c != '\0')
+		{
+			if (*c == '/' || *c == '\\')
+			{
+				f2 = f;
+				f = c;
+			}
+
+			++c;
+		}
+		if (f2)
+			return ++f2;
+		else if (f)
+			return ++f;
+		else
+			return file;
+	}
+	const char* basenameF(const char* file)
+	{
+		const char* f2 = nullptr;
+		const char* f = nullptr;
+		const char* c = file;
+		while (*c != '\0')
+		{
+			if (*c == ':')
+			{
+				++c;
+				f2 = f;
+				f = c;
+				
+			}
+
+			++c;
+		}
+		if (f2)
+			return ++f2;
+		else if (f)
+			return ++f;
+		else
+			return file;
+	}
+}
 // This is the stop-recursion function
 template<int size, class dummy>
 struct MM<size, size, dummy> {
@@ -390,7 +443,7 @@ struct Prolifer
 	{
 
 	}
-	~Prolifer()
+	inline ~Prolifer()
 	{
 		p.StopProfileF();
 	}
@@ -398,7 +451,7 @@ struct Prolifer
 // This doesn't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-#define StartProfile {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)>(__FUNCTION__);}
+#define StartProfile {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)> (UTI::basenameF(__FUNCTION__), UTI::basename( __FILE__));}
 #define StartProfileC(x) {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(x)>(x);}
 
 #else
