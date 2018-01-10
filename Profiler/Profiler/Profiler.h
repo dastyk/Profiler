@@ -451,8 +451,8 @@ struct Prolifer
 // This doesn't take into account the nul char
 #define COMPILE_TIME_CRC32_STR(x) (MM<sizeof(x)-1>::crc32(x))
 
-#define StartProfile {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)> (UTI::basenameF(__FUNCTION__), UTI::basename( __FILE__));}
-#define StartProfileC(x) {Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(x)>(x, UTI::basename( __FILE__) );}
+#define StartProfile Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(__FUNCTION__)> (UTI::basenameF(__FUNCTION__), UTI::basename( __FILE__));
+#define StartProfileC(x) Prolifer pl(Profiler::GetInstance()); pl.p.StartProfileF<COMPILE_TIME_CRC32_STR(x)>(x, UTI::basename( __FILE__) );
 
 #else
 #define StartProfile 
