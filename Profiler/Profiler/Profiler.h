@@ -377,7 +377,8 @@ struct MM {
 		return MM<size, idx + 1>::crc32(str, (prev_crc >> 8) ^ crc_table[(prev_crc ^ str[idx]) & 0xFF]);
 	}
 };
-
+#ifndef _PROFILER_UTI_
+#define _PROFILER_UTI_
 namespace UTI
 {
 	const char* basename(const char* file)
@@ -427,6 +428,7 @@ namespace UTI
 			return file;
 	}
 }
+#endif
 // This is the stop-recursion function
 template<int size, class dummy>
 struct MM<size, size, dummy> {
