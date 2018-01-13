@@ -10,4 +10,7 @@ Simply include Profiler.h and write StartProfile at the beginning of a function.
 You can also use StartProfileC to give it a custom name, this also allows for nesting in the same function.
 For use in lambdas use StartProfileC, otherwise the name will be of the function the lamda is defined in.
 
-Then define the preproccesor definition __PROFILE
+Then define the preproccesor definition __PROFILE if you wish to profile your code.
+A .dot file will be generated for each thread/dll and a .bat file to convert them to .pdf.
+
+
