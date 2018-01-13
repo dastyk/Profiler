@@ -11,6 +11,6 @@ You can also use StartProfileC to give it a custom name, this also allows for ne
 For use in lambdas use StartProfileC, otherwise the name will be of the function the lamda is defined in.
 
 Then define the preproccesor definition __PROFILE if you wish to profile your code.
-A .dot file will be generated for each thread/dll and a .bat file to convert them to .pdf.
+A .dot file will be generated for each thread/dll and a .bat file to convert them to .pdf using [Graphviz](https://www.graphviz.org/).
 
 
